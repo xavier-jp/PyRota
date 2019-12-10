@@ -9,6 +9,7 @@ from tkcalendar import DateEntry as TkcDateEntry
 from datetime import datetime, timedelta
 from ast import literal_eval
 ################################################################################
+#Temporary Python 3.8 fix: update tkcalendar DateEntry class to properly configure object
 class DateEntry(TkcDateEntry):
     def _setup_style(self, event=None):
         # override problematic method to implement fix
@@ -39,6 +40,7 @@ class DateEntry(TkcDateEntry):
 ################################################################################
 class Window:
     def __init__(self, root):
+        #Base class for all windows in the application. Initialises a tkinter Frame object and creates variables to store page elements
         self.root = root
         self.window = Frame(self.root)
         self.window.pack()
@@ -52,7 +54,8 @@ class Window:
     def close(self):
         self.window.destroy()
 
-    def connect(self, dbName): #Initialises a connection to the .db file specified by the user. If there is an internal SQL error, False is returned and an error message is displayed.
+    def connect(self, dbName):
+        #Initialises a connection to the .db file specified by the user. If there is an internal SQL error, False is returned and an error message is displayed.
         if dbName[-3:] != '.db':
             dbName += '.db'
         self.dbName = dbName
@@ -63,25 +66,30 @@ class Window:
         except Error:
             return False
 
-    def query(self, sqlCode): #Used for SQL SELECT statements. Returns the results of the query.
+    def query(self, sqlCode):
+        #Used for SQL SELECT statements. Returns the results of the query.
         cursor = self.connection.cursor()
         cursor.execute(sqlCode)
         return cursor.fetchall()
 
-    def execute(self, sqlCode): #Used for SQL CREATE/INSERT statements. Commits the changes to the database.
+    def execute(self, sqlCode):
+        #Used for SQL CREATE/INSERT statements. Commits the changes to the database.
         cursor = self.connection.cursor()
         cursor.execute(sqlCode)
         self.connection.commit()
 
     def startMenu(self):
+        #Switches window to StartMenu
         self.close()
         self.app = StartMenu(self.root)
 
     def mainMenu(self, connection, dbName):
+        #Switches start menu to MainMenu once database connection is established.
         self.close()
         self.app = MainMenu(self.root, connection, dbName)
 
-    def generateEmployeeEntries(self): #Creates widgets required for creating/editing employees, used by Window and Popup subclasses.
+    def generateEmployeeEntries(self):
+        #Creates widgets required for creating/editing employees, used by Window and Popup subclasses.
         labels = ['Employee ID:', 'First name:', 'Last name:', 'Job role:', 'Holiday remaining (days):', 'Min. hours/week:', 'Employee availability:']
 
         for label in range(1, len(labels)+1):
@@ -109,7 +117,8 @@ class Window:
                     self.popupMenu = OptionMenu(self.window, self.roleVar, *jobRoles)
                     self.popupMenu.grid(row=label+3, column=3)
 
-    def editAvailability(self): #Opens the EditAvailability() popup window. If the user has not filled out all employee entries, an error message will display.
+    def editAvailability(self):
+        #Opens the EditAvailability() popup window. If the user has not filled out all employee entries, an error message will display.
         check = True
         for entry in self.entry:
             if entry.get() == '':
@@ -122,6 +131,7 @@ class Window:
             messagebox.showerror('Error', 'Please ensure all fields are filled out before attempting to set employee availability!')
 ################################################################################
 class Popup(Window):
+    #Child class of Window, used for popup pages as they need to be created seperately from the main root tkinter application
     def __init__(self):
         self.window = Tk()
         self.window.resizable(False, False)
@@ -134,6 +144,7 @@ class Popup(Window):
         self.smallFont = ('Impact Bold', 11, 'bold')
 ################################################################################
 class StartMenu(Window):
+    #Initial start page of program
     def __init__(self, root):
         super(StartMenu, self).__init__(root)
         self.label.append(Label(self.window, text='PyRota', font=self.titleFont))
@@ -150,14 +161,17 @@ class StartMenu(Window):
             button.pack(fill=X)
 
     def createRota(self):
+        #Opens CreateRota window
         self.close()
         self.app = CreateRota(self.root)
 
     def openRota(self):
+        #Opens OpenRota window
         self.close()
         self.app = OpenRota(self.root)
 ################################################################################
 class CreateRota(Window):
+    #Window to initialise new rota
     def __init__(self, root):
         super(CreateRota, self).__init__(root)
         self.label.append(Label(self.window, text='Enter a name for your new rota database:\n', font=self.subFont))
@@ -174,7 +188,8 @@ class CreateRota(Window):
             button.config(height='3')
             button.pack(fill=X)
 
-    def create(self): #Checks for the existence of the file specified by the user. If it does not exist, it is created, and the tables are created within the file.
+    def create(self):
+        #Checks for the existence of the file specified by the user. If it does not exist, it is created, and the tables are created within the file.
         if self.entry[0].get() == '':
             messagebox.showerror('Error', 'Please enter a name for your new database!')
         else:
@@ -233,6 +248,7 @@ class CreateRota(Window):
                     self.mainMenu(self.connection, self.dbName)
 ################################################################################
 class OpenRota(Window):
+    #Page to open existing rota
     def __init__(self, root):
         super(OpenRota, self).__init__(root)
         self.label.append(Label(self.window, text='Enter the name of your rota database:\n', font=self.subFont))
@@ -249,7 +265,8 @@ class OpenRota(Window):
             button.config(height='3')
             button.pack(fill=X)
 
-    def findDB(self): #Finds the database file specified by the user using self.connect(), and launches the main menu.
+    def findDB(self):
+        #Finds the database file specified by the user using self.connect(), and launches the main menu.
         self.connection = self.connect(self.entry[0].get())
         if not self.connection:
             self.entry[0].delete(0, END)
@@ -259,7 +276,8 @@ class OpenRota(Window):
         else:
             self.mainMenu(self.connection, self.dbName)
 
-    def connect(self, dbName): #Checks whether the file specified by the user already exists. If not, an error message is displayed when the value 'pineapple' is returned to self.findDB().
+    def connect(self, dbName):
+        #Checks whether the file specified by the user already exists. If not, an error message is displayed when the value 'pineapple' is returned to self.findDB().
         self.connection = super(OpenRota, self).connect(dbName)
         tables = self.query("SELECT name FROM sqlite_master WHERE type='table';")
         if str(tables) == '[]':
@@ -270,6 +288,7 @@ class OpenRota(Window):
             return self.connection
 ################################################################################
 class MainMenu(Window):
+    #Main program page with Employees, Company and Holiday widgets, as well as the option to create rotas.
     def __init__(self, root, connection, dbName):
         super(MainMenu, self).__init__(root)
         self.connection = connection
@@ -298,7 +317,8 @@ class MainMenu(Window):
         self.connection.close()
         root.destroy()
 
-    def clearFields(self): #Removes all widgets from the window, except the main widgets defined in self.__init__().
+    def clearFields(self):
+        #Removes all widgets from the window, except the main widgets defined in self.__init__().
         while len(self.label) > 1:
             self.label[-1].grid_remove()
             del self.label[-1]
@@ -326,13 +346,15 @@ class MainMenu(Window):
         except:
             pass
 
-    def updateList(self, table): #Updates listbox to display entries from table {table}.
+    def updateList(self, table):
+        #Updates listbox to display entries from table {table}.
         self.list.delete(0, END)
         query = self.query(f'SELECT * from {table}')
         for item in query:
             self.list.insert(END, item)
 
     def generateListbox(self, Lrow, Lwidth, table):
+        #Configures listbox in tkinter grid depending on it's application. when Lwidth = 45 the listbox is configured for employees, else it is configured for job roles.
         self.list = Listbox(self.window, height=6, width=Lwidth, font = self.font)
         self.list.grid(row=Lrow, column = 1, sticky=W)
         self.scrollbar = Scrollbar(self.window)
@@ -354,7 +376,8 @@ class MainMenu(Window):
 
 
 
-    def employees(self): #Builds employee editor widgets.
+    def employees(self):
+        #Builds employee editor widgets.
         self.clearFields()
         self.abCheck = False
 
@@ -369,7 +392,8 @@ class MainMenu(Window):
 
         self.generateListbox(12, 45, 'Employees')
 
-    def addEmployee(self): #Inserts new employee with details entered by user into Employees table, as long as all fields have been filled and the EmployeeID is not already in use.
+    def addEmployee(self):
+        #Inserts new employee with details entered by user into Employees table, as long as all fields have been filled and the EmployeeID is not already in use.
         check = True
         for i in range(0, 5):
             if self.entry[i].get() == '' or not self.abCheck or self.roleVar.get() == 'None':
@@ -390,6 +414,7 @@ class MainMenu(Window):
                 messagebox.showerror('Error', 'Please ensure holiday remaining and min. hours are whole numbers!')
 
     def editEmployee(self):
+        #Launches EditEmployee popup
         try:
             employee = self.list.get(self.list.curselection())
             EditEmployee(self.connection, employee)
@@ -397,6 +422,7 @@ class MainMenu(Window):
             pass
 
     def delEmployee(self):
+        #Removes selected employee in listbox from the database
         try:
             tables = ['Employees', 'Availability']
             for table in tables:
@@ -408,6 +434,7 @@ class MainMenu(Window):
 
 
     def company(self):
+        #Builds company editor widgets
         self.clearFields()
 
         self.label.append(Label(self.window, text='Staff required each day', font=self.subFont))
@@ -456,6 +483,7 @@ class MainMenu(Window):
         self.generateListbox(17, 20, 'JobRoles')
 
     def saveStaffRequired(self):
+        #Validates entry fields and saves shift pattern to database
         check = True
         for entry in range(0, 7):
             try:
@@ -479,6 +507,7 @@ class MainMenu(Window):
                             VALUES({self.shiftPattern}, {self.entry[0].get()}, {self.entry[1].get()}, {self.entry[2].get()}, {self.entry[3].get()}, {self.entry[4].get()}, {self.entry[5].get()}, {self.entry[6].get()})""")
 
     def displayShiftPattern(self):
+        #Inserts values from database when shift pattern is selected (when present)
         staffRequired = self.query(f"""SELECT Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
                                     FROM StaffRequired WHERE ShiftPattern = {self.shiftPattern}""")
         for entry in range(0, 7):
@@ -486,6 +515,7 @@ class MainMenu(Window):
             if staffRequired != []:
                 self.entry[entry].insert(0, staffRequired[0][entry])
 
+    #selectShiftPattern 1-3 are required for the different buttons present for each shift pattern.
     def selectShiftPattern1(self):
         self.shiftPattern = 1
         self.displayShiftPattern()
@@ -499,6 +529,7 @@ class MainMenu(Window):
         self.displayShiftPattern()
 
     def addJobRole(self):
+        #Validates entry and adds job role to database
         check = True
         try:
             if self.entry[7].get() == '':
@@ -529,12 +560,14 @@ class MainMenu(Window):
             self.entry[entry].delete(0, END)
 
     def editJobRole(self):
+        #Opens EditJobRole popup
         try:
             EditJobRole(self.connection, self.list.get(self.list.curselection()))
         except TclError:
             pass
 
     def delJobRole(self):
+        #Deletes job role from database and sets job role to affected employees to None
         try:
             self.execute(f"""DELETE FROM JobRoles WHERE JobRole = '{self.list.get(self.list.curselection())[0]}'""")
             employeesWithRole = self.query(f"""SELECT EmployeeID FROM Employees WHERE JobRole = '{self.list.get(self.list.curselection())[0]}'""")
@@ -549,6 +582,7 @@ class MainMenu(Window):
 
 
     def holidays(self):
+        #Builds holiday widgets
         self.clearFields()
 
         self.label.append(Label(self.window, text='Holiday calendar\n', font=self.subFont))
@@ -565,18 +599,21 @@ class MainMenu(Window):
         self.button[-1].grid(row=6, column=2, sticky=E)
 
     def addHoliday(self):
+        #Opens AddHoliday popup
         try:
             AddHoliday(self.connection)
         except TclError:
             pass
 
     def editHoliday(self):
+        #Opens EditHoliday popup
         try:
             EditHoliday(self.connection, self.calendar, self.calendar.selection_get())
         except TclError:
             pass
 
     def updateCalendar(self):
+        #Finds date entries from databse and adds them to tkcalendar Calendar object
         self.calendar.calevent_remove('all')
         calendarInfo = self.query('SELECT * FROM Holidays')
         for tup in range(len(calendarInfo)):
@@ -622,7 +659,8 @@ class EditAvailability(Popup):
         self.button.append(Button(self.window, text='OK', font=self.smallFont, command=self.ok))
         self.button[-1].pack()
 
-    def ok(self): #Appends available day values to Availability table in the database. Each day of the week is represented in binary to easily read the values back from the table (line 334).
+    def ok(self):
+        #Appends available day values to Availability table in the database. Each day of the week is represented in binary to easily read the values back from the table (line 334).
         dayVals = {'Monday':1, 'Tuesday':2, 'Wednesday':4, 'Thursday':8, 'Friday':16, 'Saturday':32, 'Sunday':64}
         valDays = {0:'Monday', 1:'Tuesday', 2:'Wednesday', 3:'Thursday', 4:'Friday', 5:'Saturday', 6:'Sunday'}
         days = 0
@@ -920,7 +958,8 @@ class EditHoliday(Popup):
             topApp.updateCalendar()
             self.close()
 ################################################################################
-def onClosing(): #Creates warning to prevent user from accidentally exiting the program without saving.
+def onClosing():
+    #Creates warning to prevent user from accidentally exiting the program without saving.
     if messagebox.askokcancel('Warning!', 'Are you sure you want to exit? Changes you have made may be lost!'):
         root.destroy()
 
