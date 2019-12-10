@@ -10,7 +10,7 @@ To install tkcalendar: `pip install tkcalendar` on the command line of your chos
 When the program is started, an options menu appears. Here, you can choose to create a new rota or open an existing rota. When a rota is created, a database (.db) file is created in the same directory as the program, and given the name entered by the user. This is also the name which must be used in order to open an existing rota.
 
 ### Employee menu
-Once a rota has been created/opened, or when the `Employees` button is pressed, you are greeted with the employee menu. There are two elements to this window, the 'add employee' section, and the 'view/edit' section:
+When the `Employees` button is pressed, you are greeted with the employee menu. There are two elements to this window, the 'add employee' section, and the 'view/edit' section:
 #### Add employee
 `EmployeeID`: Unique employee identifier, can contain any characters
 
